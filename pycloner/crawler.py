@@ -26,6 +26,7 @@ import os
 import requests
 import shutil
 import sys
+from fake_useragent import UserAgent 
 
 from bs4 import BeautifulSoup
 
@@ -61,6 +62,9 @@ class Crawler():
         self.project_name = project_name
         self.data_folder = data_folder
         self.project_path = os.path.join(self.data_folder, self.project_name)
+        # self.ua = UserAgent().random
+        self.header = {"User-Agent":UserAgent().random}
+        self.session = requests.Session()
         try:
             safelyCreateDirectories(self.project_path, type="DIRECTORY")
         except:
@@ -88,7 +92,7 @@ class Crawler():
     def _getUrlHash(self, url):
         """An auxiliary method that calculates the SHA256 hash of the Url provided.
         """
-        return hashlib.sha256(url).hexdigest()
+        return hashlib.sha256(url.encode('utf-8')).hexdigest()
 
 
     def _buildFullUrl(self, url):
@@ -134,10 +138,12 @@ class Crawler():
                     l = os.path.join(self.base_url, file_name)
                     try:
                         if element != "img":
-                            r = requests.get(l)
+                            # r = requests.get(l)
+                            r = self.session.get(l,headers = self.headers)
                         # Saving images
                         else:
-                            r = requests.get(l, stream=True)
+                            # r = requests.get(l, stream=True)
+                            r = self.session.get(l,stream=True,headers = self.headers)
                     except requests.exceptions.ConnectionError:
                         Crawler.error_links.append(l)
                         continue
@@ -197,7 +203,8 @@ class Crawler():
 
             # Recovering the resource
             try:
-                r = requests.get(link)
+                # r = requests.get(link)
+                r = self.session.get(link,headers = self.headers)
             except requests.exceptions.ConnectionError:
                 raise CrawlingException("Connection error when requesting " + link)
 
