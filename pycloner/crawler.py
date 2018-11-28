@@ -139,11 +139,11 @@ class Crawler():
                     try:
                         if element != "img":
                             # r = requests.get(l)
-                            r = self.session.get(l,headers = self.headers)
+                            r = self.session.get(l,headers = self.header)
                         # Saving images
                         else:
                             # r = requests.get(l, stream=True)
-                            r = self.session.get(l,stream=True,headers = self.headers)
+                            r = self.session.get(l,stream=True,headers = self.header)
                     except requests.exceptions.ConnectionError:
                         Crawler.error_links.append(l)
                         continue
@@ -204,7 +204,7 @@ class Crawler():
             # Recovering the resource
             try:
                 # r = requests.get(link)
-                r = self.session.get(link,headers = self.headers)
+                r = self.session.get(link,headers = self.header)
             except requests.exceptions.ConnectionError:
                 raise CrawlingException("Connection error when requesting " + link)
 
