@@ -215,7 +215,10 @@ class Crawler():
                 print(error(e.message))
 
             # Building the current URL folder
-            current_url_folder = os.path.join(self.project_path, self.site_name + "_" + self._getUrlHash(link))
+            soup = BeautifulSoup(r.text, "html.parser")
+            title = soup.title.string
+            current_url_folder = os.path.join(self.project_path, self.site_name + "_" +title+"_"+ self._getUrlHash(link))
+            print("current_url_folder = "+current_url_folder)
             try:
                 safelyCreateDirectories(current_url_folder, type="DIRECTORY")
             except:
@@ -223,19 +226,20 @@ class Crawler():
 
             # Get the file name after https?://
             if link.count("/") <= 2:
-                file_name = "index.html"
+                file_name = title + ".html"
             elif link.count("/") == 3 and link[-1] == "/":
-                file_name = "index.html"
+                file_name = title + ".html"
             else:
                 file_name = link.split("/", 3)[3]
                 if file_name[-1] == "/":
-                    file_name += "index.html"
+                    file_name += title + ".html"
 
             # Check to avoid file names starting with / which create a conflict when trying to join paths
             while file_name[0] == "/":
                 file_name = file_name[1:]
 
             file_path = os.path.join(current_url_folder, file_name)
+            print("file_path = "+file_path)
             try:
                 safelyCreateDirectories(file_path)
             except:
@@ -244,7 +248,7 @@ class Crawler():
             # Saving the crawled file
             with open(file_path, "wb") as f:
                 # Replacing any reference  to the website to a local instance of the crawled data
-                text = r.text.replace(self.site_name, self.project_path)
+                text = r.text.replace("https://"+self.site_name, "")
                 f.write(text.encode('utf-8'))
                 f.close()
 
@@ -259,7 +263,7 @@ class Crawler():
 
             # Collecting more resources in deep
             if current_level < self.max_deep_level:
-                soup = BeautifulSoup(r.text, "html.parser")
+                # soup = BeautifulSoup(r.text, "html.parser")
 
                 # Iterating again through all the elements in the HTML website to get new links
                 tags = soup.find_all('a')
