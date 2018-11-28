@@ -265,21 +265,21 @@ class Crawler():
                 tags = soup.find_all('a')
                 for i, link in enumerate(tags):
                     href = link.get("href")
+                    if href != "/":
+                        try:
+                            # Building the url from the given href
+                            new_link = self._buildFullUrl(href)
 
-                    try:
-                        # Building the url from the given href
-                        new_link = self._buildFullUrl(href)
+                            print(info("Starting a new crawling process " + str(i+1) + "/" + str(len(tags)) + " for " + href))
 
-                        print(info("Starting a new crawling process " + str(i+1) + "/" + str(len(tags)) + " for " + href))
-
-                        # Instatiating the crwaler
-                        new_crawler = Crawler(new_link, self.project_name, self.data_folder)
-                        # Starting the crawling process
-                        new_crawler.crawl(current_level=current_level+1)
-                    except CrawlerInitializationException as e:
-                        print(e.message)
-                        break
-                    except Exception as e:
-                        print(e.message)
-                        break
-                    print(success("Finished crawling for " + new_link))
+                            # Instatiating the crwaler
+                            new_crawler = Crawler(new_link, self.project_name, self.data_folder)
+                            # Starting the crawling process
+                            new_crawler.crawl(current_level=current_level+1)
+                        except CrawlerInitializationException as e:
+                            print(e.message)
+                            break
+                        except Exception as e:
+                            print(e)
+                            break
+                        print(success("Finished crawling for " + new_link))
