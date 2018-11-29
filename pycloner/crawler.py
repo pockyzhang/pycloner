@@ -226,13 +226,13 @@ class Crawler():
 
             # Get the file name after https?://
             if link.count("/") <= 2:
-                file_name = title + ".html"
+                file_name = "index.html"
             elif link.count("/") == 3 and link[-1] == "/":
-                file_name = title + ".html"
+                file_name = "index.html"
             else:
                 file_name = link.split("/", 3)[3]
                 if file_name[-1] == "/":
-                    file_name += title + ".html"
+                    file_name += "index.html"
 
             # Check to avoid file names starting with / which create a conflict when trying to join paths
             while file_name[0] == "/":
