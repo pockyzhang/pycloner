@@ -31,7 +31,8 @@ from fake_useragent import UserAgent
 from bs4 import BeautifulSoup
 
 from pycloner.utils import error, warning, success, info, safelyCreateDirectories
-
+from pycloner.dbInstance import dbSingle
+import time
 
 class CrawlerInitializationException(Exception):
     def __init__(self, message="Crawler instance could not be done."):
@@ -63,8 +64,10 @@ class Crawler():
         self.data_folder = data_folder
         self.project_path = os.path.join(self.data_folder, self.project_name)
         # self.ua = UserAgent().random
-        self.header = {"User-Agent":UserAgent().random}
+        self.header = {"User-Agent":UserAgent().random,
+        "cookie":"cookie:wordpress_logged_in_dab6060be3245b934689b7ec8bb2feab=xcodest%7C1544439203%7CX0cExXBMgueWbLzSF05Zmnm1xgYli8w6UbsOyef4mQw%7Ca5f458399a5711b2086b40f0f0a3307fcf67f0ad09c8b58ff70997658f834e09; pmpro_visit=1; _gat_gtag_UA_57572878_1=1; _ga=GA1.2.1247622162.1534688800; _gid=GA1.2.242086911.1543845248"}
         self.session = requests.Session()
+
         try:
             safelyCreateDirectories(self.project_path, type="DIRECTORY")
         except:
@@ -197,6 +200,10 @@ class Crawler():
         # Method needed to create relative URL when called recursively
         if "http://" not in link and "https://" not in link:
             link = self.base_url + link
+        if dbSingle.checkUrlCanAdd(link) == False:
+            print('++++++ this url exists')
+            return
+        time.sleep(2)
 
         if self.site_name in link and link not in Crawler.visited_links:
             print(info("Crawling level: " + str(current_level) + ". Working with: {}".format(link)))
@@ -217,7 +224,7 @@ class Crawler():
             # Building the current URL folder
             soup = BeautifulSoup(r.text, "html.parser")
             title = soup.title.string
-            current_url_folder = os.path.join(self.project_path, self.site_name + "_" +title+"_"+ self._getUrlHash(link))
+            current_url_folder = os.path.join(self.project_path,  title+"_"+ self._getUrlHash(link))
             print("current_url_folder = "+current_url_folder)
             try:
                 safelyCreateDirectories(current_url_folder, type="DIRECTORY")
@@ -248,7 +255,7 @@ class Crawler():
             # Saving the crawled file
             with open(file_path, "wb") as f:
                 # Replacing any reference  to the website to a local instance of the crawled data
-                text = r.text.replace("https://"+self.site_name, "")
+                text = r.text.replace(self.site_name, self.project_path)
                 f.write(text.encode('utf-8'))
                 f.close()
 
@@ -287,3 +294,4 @@ class Crawler():
                             print(e)
                             break
                         print(success("Finished crawling for " + new_link))
+                        dbSingle.insertUrlIntoDB(new_link)
