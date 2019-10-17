@@ -64,8 +64,11 @@ class Crawler():
         self.data_folder = data_folder
         self.project_path = os.path.join(self.data_folder, self.project_name)
         # self.ua = UserAgent().random
-        self.header = {"User-Agent":UserAgent().random,
-        "cookie":"cookie:wordpress_logged_in_dab6060be3245b934689b7ec8bb2feab=xcodest%7C1544439203%7CX0cExXBMgueWbLzSF05Zmnm1xgYli8w6UbsOyef4mQw%7Ca5f458399a5711b2086b40f0f0a3307fcf67f0ad09c8b58ff70997658f834e09; pmpro_visit=1; _gat_gtag_UA_57572878_1=1; _ga=GA1.2.1247622162.1534688800; _gid=GA1.2.242086911.1543845248"}
+        # self.header = {"User-Agent":UserAgent().random,
+        # "cookie":"_ga=GA1.2.2028114516.1544012438; _gid=GA1.2.1035883623.1545824560; wordpress_test_cookie=WP+Cookie+check; wordpress_logged_in_dab6060be3245b934689b7ec8bb2feab=xcodest%7C1547034170%7C11YBH6tFBiweH9tqF3PjcABjocZQAWhMuUv9WRZLNOH%7C064a8bac841ab9dd847bcb2d0baa832c8881c2180d6ef8d1b153815c14088ba8"
+        # }
+        self.header = {"User-Agent":UserAgent().random
+        }
         self.session = requests.Session()
 
         try:
@@ -131,7 +134,7 @@ class Crawler():
 
             if href is not None and href not in Crawler.visited_links:
                 if check == None or check != None and check in href :
-                    print(info("Working with: {}".format(href)))
+                    # print(info("Working with: {}".format(href)))
                     if "//" in href:
                         path_s = href.split("/", 3)
                         file_name = path_s[3]
@@ -200,13 +203,20 @@ class Crawler():
         # Method needed to create relative URL when called recursively
         if "http://" not in link and "https://" not in link:
             link = self.base_url + link
-        if dbSingle.checkUrlCanAdd(link) == False:
-            print('++++++ this url exists')
+
+        if "hacked.com" in link == False:
             return
-        time.sleep(2)
+        if "login" in link:
+            return
+        if "logout" in link:
+            return
+        # if dbSingle.checkUrlCanAdd(link) == False:
+        #     print('++++++ this url exists')
+        #     return
+        # time.sleep(3)
 
         if self.site_name in link and link not in Crawler.visited_links:
-            print(info("Crawling level: " + str(current_level) + ". Working with: {}".format(link)))
+            # print(info("Crawling level: " + str(current_level) + ". Working with: {}".format(link)))
 
             # Recovering the resource
             try:
@@ -224,8 +234,10 @@ class Crawler():
             # Building the current URL folder
             soup = BeautifulSoup(r.text, "html.parser")
             title = soup.title.string
-            current_url_folder = os.path.join(self.project_path,  title+"_"+ self._getUrlHash(link))
-            print("current_url_folder = "+current_url_folder)
+            # current_url_folder = os.path.join(self.project_path,  title+"_"+ self._getUrlHash(link))
+            # current_url_folder = os.path.join(self.project_path,  title)
+            current_url_folder =  self.project_path
+            # print("current_url_folder = "+current_url_folder)
             try:
                 safelyCreateDirectories(current_url_folder, type="DIRECTORY")
             except:
@@ -233,40 +245,47 @@ class Crawler():
 
             # Get the file name after https?://
             if link.count("/") <= 2:
-                file_name = "index.html"
+                # file_name = "index.html"
+                file_name = title+".html"
             elif link.count("/") == 3 and link[-1] == "/":
-                file_name = "index.html"
+                # file_name = "index.html"
+                file_name = title+".html"
             else:
                 file_name = link.split("/", 3)[3]
                 if file_name[-1] == "/":
-                    file_name += "index.html"
+                    # file_name += "index.html"
+                    file_name = title+".html"
 
             # Check to avoid file names starting with / which create a conflict when trying to join paths
             while file_name[0] == "/":
                 file_name = file_name[1:]
 
             file_path = os.path.join(current_url_folder, file_name)
-            print("file_path = "+file_path)
+            # print("file_path = "+file_path)
             try:
                 safelyCreateDirectories(file_path)
             except:
                 raise CrawlerInitializationException("The path for the current website ('"  + file_path + "') could not be created.")
 
             # Saving the crawled file
-            with open(file_path, "wb") as f:
-                # Replacing any reference  to the website to a local instance of the crawled data
-                text = r.text.replace(self.site_name, self.project_path)
-                f.write(text.encode('utf-8'))
-                f.close()
+            # zb remove
+            # with open(file_path, "wb") as f:
+            #     print("self.site_name = ",self.site_name)
+            #     print("self.project_path = ",self.project_path)
+            #     # Replacing any reference  to the website to a local instance of the crawled data
+            #     text = r.text.replace("https://hacked.com", ".")
+            #     f.write(text.encode('utf-8'))
+            #     f.close()
 
-                print(info("Crawled file:\t" + file_path))
+            #     print(info("Crawled file:\t" + file_path))
 
             # Adding the link to the visited links
             Crawler.visited_links.append(link)
 
-            if full_website:
-                # Saving the assets found in the text recovered
-                self._save_assets(r.text, current_url_folder)
+# zb remove
+            # if full_website:
+            #     # Saving the assets found in the text recovered
+            #     self._save_assets(r.text, current_url_folder)
 
             # Collecting more resources in deep
             if current_level < self.max_deep_level:
@@ -279,11 +298,16 @@ class Crawler():
                     if href != "/":
                         try:
                             # Building the url from the given href
+                            print(href)
+                            if href == "#":
+                                continue
                             new_link = self._buildFullUrl(href)
+                            # print(new_link)
 
-                            print(info("Starting a new crawling process " + str(i+1) + "/" + str(len(tags)) + " for " + href))
+                            # print(info("Starting a new crawling process " + str(i+1) + "/" + str(len(tags)) + " for " + href))
 
                             # Instatiating the crwaler
+                            # zb remove
                             new_crawler = Crawler(new_link, self.project_name, self.data_folder)
                             # Starting the crawling process
                             new_crawler.crawl(current_level=current_level+1)
@@ -293,5 +317,6 @@ class Crawler():
                         except Exception as e:
                             print(e)
                             break
-                        print(success("Finished crawling for " + new_link))
-                        dbSingle.insertUrlIntoDB(new_link)
+                        # print(success("Finished crawling for " + new_link))
+                        # print(new_link)
+                        # dbSingle.insertUrlIntoDB(new_link)
